@@ -45,11 +45,15 @@ libraryDependencies += "com.typesafe.akka" % "akka-slf4j_2.11" % akkaVersion
 
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence-experimental" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
-libraryDependencies += "com.github.krasserm" %% "akka-persistence-cassandra" % "0.3.7" excludeAll (ExclusionRule(organization = "com.codahale.metrics"))
+resolvers += "dnvriend at bintray" at "http://dl.bintray.com/dnvriend/maven"
+
+libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.0.3" % "test"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
+
+libraryDependencies += "com.typesafe.akka" % "akka-testkit_2.11" % akkaVersion % "test"
 
 libraryDependencies += "nl.grons" %% "metrics-scala" % "3.3.0_a2.3" excludeAll (ExclusionRule(organization = "com.typesafe.akka"))
 
