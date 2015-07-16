@@ -3,7 +3,7 @@ import Keys._
 
 organization := "com.comcast"
 
-name := "akka-service-registry-top"
+name := "AkkaServiceRegistry"
 
 version := "1.0"
 

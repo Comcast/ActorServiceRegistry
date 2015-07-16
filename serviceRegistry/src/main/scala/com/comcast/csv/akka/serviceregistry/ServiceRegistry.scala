@@ -3,8 +3,7 @@ package com.comcast.csv.akka.serviceregistry
 import akka.actor._
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberRemoved}
-import akka.persistence.{SaveSnapshotSuccess, SnapshotOffer, RecoveryCompleted, PersistentActor}
-import com.comcast.csv.common.actors.InstrumentedActor
+import akka.persistence.{PersistentActor, RecoveryCompleted, SaveSnapshotSuccess, SnapshotOffer}
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
 
 import scala.collection.mutable
@@ -14,6 +13,7 @@ import scala.collection.mutable
  */
 object ServiceRegistry {
   def props = Props[ServiceRegistry]
+
   val identity = "serviceRegistry"
 }
 
@@ -45,7 +45,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
   }
 
   def considerRememberParticipant(participant: ActorRef): Unit = {
-    if(!subscribersPublishers.contains(participant)) {
+    if (!subscribersPublishers.contains(participant)) {
       val add = AddSubscriberPublisher(participant)
       persist(add)(recordSubscriberPublisher)
     }
@@ -58,12 +58,12 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
   def considerForgetParticipant(participant: ActorRef): Unit = {
 
     def isSubscriberPublisherStillInUse(subpub: ActorRef): Boolean = {
-      if(subscribers.contains(subpub)) return true
-      if(publishers.exists(p => p._2 == subpub)) return true
+      if (subscribers.contains(subpub)) return true
+      if (publishers.exists(p => p._2 == subpub)) return true
       false
     }
 
-    if(subscribersPublishers.contains(participant) && isSubscriberPublisherStillInUse(participant)) {
+    if (subscribersPublishers.contains(participant) && isSubscriberPublisherStillInUse(participant)) {
       val remove = RemoveSubscriberPublisher(participant)
       persist(remove)(unrecordSubscriberPublisher)
     }
@@ -73,7 +73,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
     case add: AddSubscriberPublisher =>
       recordSubscriberPublisher(add)
     case SnapshotOffer(_, snapshot: SnapshotAfterRecover) =>
-      // do nothing
+    // do nothing
     case RecoveryCompleted =>
       saveSnapshot(SnapshotAfterRecover())
   }
@@ -98,8 +98,8 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
     case ss: SubscribeToService =>
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
-            s + ss.serviceName
-          })
+        s + ss.serviceName
+      })
         .getOrElse(new mutable.HashSet[String]))
       publishers.filter(p => p._1 == ss.serviceName)
         .foreach(p => sender() ! ServiceAvailable(ss.serviceName, p._2))
@@ -108,8 +108,8 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
     case us: UnSubscribeToService =>
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
-            s - us.serviceName
-          })
+        s - us.serviceName
+      })
         .getOrElse(new mutable.HashSet[String]))
       considerForgetParticipant(sender())
 
@@ -120,7 +120,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
         publishedVsNodeAddress -= p2._1
       })
 
-    case SaveSnapshotSuccess =>
+    case sss: SaveSnapshotSuccess =>
 
     case msg =>
       log.info(s"received unknown message: $msg")
