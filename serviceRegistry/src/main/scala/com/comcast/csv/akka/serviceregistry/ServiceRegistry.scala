@@ -63,7 +63,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       false
     }
 
-    if (subscribersPublishers.contains(participant) && isSubscriberPublisherStillInUse(participant)) {
+    if (subscribersPublishers.contains(participant) && !isSubscriberPublisherStillInUse(participant)) {
       val remove = RemoveSubscriberPublisher(participant)
       persist(remove)(unrecordSubscriberPublisher)
     }
@@ -71,16 +71,20 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
 
   override def receiveRecover: Receive = {
     case add: AddSubscriberPublisher =>
+      log.info(s"Received -> AddSubscriberPublisher: $add")
       recordSubscriberPublisher(add)
     case SnapshotOffer(_, snapshot: SnapshotAfterRecover) =>
+      log.info(s"Received -> SnapshotOffer")
     // do nothing
     case RecoveryCompleted =>
+      log.info(s"Received -> RecoveryCompleted")
       saveSnapshot(SnapshotAfterRecover())
   }
 
   override def receiveCommand: Receive = {
 
     case ps: PublishService =>
+      log.info(s"Received -> PublishService: $ps")
       publishers += (ps.serviceName -> ps.serviceEndpoint)
       publishedVsNodeAddress += (ps.serviceName -> ps.nodeAddress)
       subscribers.filter(p => p._2.contains(ps.serviceName))
@@ -88,6 +92,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       considerRememberParticipant(ps.serviceEndpoint)
 
     case ups: UnPublishService =>
+      log.info(s"Received -> UnPublishService: $ups")
       val serviceEndpoint = publishers.get(ups.serviceName)
       publishers -= ups.serviceName
       publishedVsNodeAddress -= ups.serviceName
@@ -96,6 +101,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       serviceEndpoint.foreach(ep => considerForgetParticipant(ep))
 
     case ss: SubscribeToService =>
+      log.info(s"Received -> SubscribeToService: $ss")
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
         s + ss.serviceName
@@ -106,6 +112,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       considerRememberParticipant(sender())
 
     case us: UnSubscribeToService =>
+      log.info(s"Received -> UnSubscribeToService: $us")
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
         s - us.serviceName
@@ -114,6 +121,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       considerForgetParticipant(sender())
 
     case mr: MemberRemoved =>
+      log.info(s"Received -> MemberRemoved: $mr")
       publishedVsNodeAddress.filter(p1 => p1._2 == mr.member.address).foreach(p2 => {
         subscribers.filter(p3 => p3._2.contains(p2._1))
           .foreach(p4 => p4._1 ! ServiceUnAvailable(p2._1))
@@ -121,9 +129,10 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       })
 
     case sss: SaveSnapshotSuccess =>
+      log.info(s"Received -> SaveSnapshotSuccess: $sss")
 
     case msg =>
-      log.info(s"received unknown message: $msg")
+      log.info(s"Received unknown message: $msg")
   }
 }
 
