@@ -78,6 +78,9 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
     // do nothing
     case RecoveryCompleted =>
       log.info(s"Received -> RecoveryCompleted")
+      val registryHasRestarted = RegistryHasRestarted(self)
+      subscribersPublishers.foreach(sp => sp ! registryHasRestarted)
+      subscribersPublishers.clear()
       saveSnapshot(SnapshotAfterRecover())
   }
 

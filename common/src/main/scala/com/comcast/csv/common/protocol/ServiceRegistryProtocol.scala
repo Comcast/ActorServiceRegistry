@@ -18,4 +18,6 @@ object ServiceRegistryProtocol {
   case class ServiceAvailable(serviceName: String, serviceEndpoint: ActorRef)
   case class ServiceUnAvailable(serviceName: String)
 
+  case class RegistryHasRestarted(registry: ActorRef)
+
 }
