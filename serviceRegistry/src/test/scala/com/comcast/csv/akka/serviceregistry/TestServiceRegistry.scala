@@ -20,7 +20,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.props)
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -42,7 +42,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.props)
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
 
         // subscribe to the sample service before it is started
         registry ! SubscribeToService("sampleService")
@@ -65,7 +65,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceUnAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.props)
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -89,5 +89,37 @@ with ImplicitSender with BeforeAndAfterAll {
         aSampleService ! PoisonPill
       }
     }
+  }
+
+  "A ServiceRegistry actor" when {
+    "created, a service is published, and a SubscribedTo is received, and the service is terminated" should {
+      "respond with a ServiceUnAvailable msg" in {
+
+        // start the registry
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
+
+        // start a sample service
+        val aSampleService = system.actorOf(SampleService.props)
+        aSampleService ! SampleServiceInitialize(serviceName = "sampleService", registry = registry)
+
+        // subscribe to the sample service
+        registry ! SubscribeToService("sampleService")
+
+
+
+        expectMsg(ServiceAvailable(serviceName = "sampleService", serviceEndpoint = aSampleService))
+
+        // tell the sample service to go offline
+        aSampleService ! PoisonPill
+
+        expectMsg(ServiceUnAvailable(serviceName = "sampleService"))
+
+        registry ! PoisonPill
+      }
+    }
+  }
+
+  override def afterAll(): Unit = {
+    shutdown(system)
   }
 }

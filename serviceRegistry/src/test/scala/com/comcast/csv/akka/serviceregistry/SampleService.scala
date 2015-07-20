@@ -28,8 +28,7 @@ class SampleService extends StackableTimingActor with StackableCountingActor wit
     case initialize: SampleServiceInitialize =>
       serviceName = Option(initialize.serviceName)
       registry = Option(initialize.registry)
-      val address = AddressFromURIString("akka.tcp://actorSystemName@10.0.0.1:2552/user/actorName")
-      registry.foreach(r => serviceName.foreach(name => r ! PublishService(serviceName = name, serviceEndpoint = self, nodeAddress = address)))
+      registry.foreach(r => serviceName.foreach(name => r ! PublishService(serviceName = name, serviceEndpoint = self)))
 
     case ss: SampleServiceSubscribeTo =>
       registry.foreach(r => r ! SubscribeToService(ss.serviceName))

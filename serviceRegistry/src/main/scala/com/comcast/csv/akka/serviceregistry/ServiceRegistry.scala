@@ -12,7 +12,9 @@ import scala.collection.mutable
  * Companion of ServiceRegistry.
  */
 object ServiceRegistry {
+
   def props = Props[ServiceRegistry]
+  def propsControllingRecovery(bypassRestartNotification: Boolean) = Props(classOf[ServiceRegistry], bypassRestartNotification)
 
   val identity = "serviceRegistry"
 }
@@ -22,7 +24,9 @@ object ServiceRegistry {
  *
  * @author dbolene
  */
-class ServiceRegistry extends PersistentActor with ActorLogging {
+class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActor with ActorLogging {
+
+  def this() = this(false)
 
   // [aSubscriberOrPublisher]
   val subscribersPublishers = scala.collection.mutable.Set.empty[ActorRef]
@@ -30,11 +34,6 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
   val subscribers = scala.collection.mutable.HashMap.empty[ActorRef, mutable.HashSet[String]]
   // Map[published,publisher]
   val publishers = scala.collection.mutable.HashMap.empty[String, ActorRef]
-  // Map[published,nodeAddress]
-  val publishedVsNodeAddress = scala.collection.mutable.HashMap.empty[String, Address]
-
-  val cluster = Cluster(context.system)
-  cluster.subscribe(self, initialStateMode = InitialStateAsEvents, classOf[MemberRemoved])
 
   log.info(s"=================== ServiceRegistry created")
 
@@ -79,7 +78,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
     case RecoveryCompleted =>
       log.info(s"Received -> RecoveryCompleted")
       val registryHasRestarted = RegistryHasRestarted(self)
-      subscribersPublishers.foreach(sp => sp ! registryHasRestarted)
+      if(!bypassRestartNotification) subscribersPublishers.foreach(sp => sp ! registryHasRestarted)
       subscribersPublishers.clear()
       saveSnapshot(SnapshotAfterRecover())
   }
@@ -89,16 +88,15 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
     case ps: PublishService =>
       log.info(s"Received -> PublishService: $ps")
       publishers += (ps.serviceName -> ps.serviceEndpoint)
-      publishedVsNodeAddress += (ps.serviceName -> ps.nodeAddress)
       subscribers.filter(p => p._2.contains(ps.serviceName))
         .foreach(p => p._1 ! ServiceAvailable(ps.serviceName, ps.serviceEndpoint))
+      context.watch(ps.serviceEndpoint)
       considerRememberParticipant(ps.serviceEndpoint)
 
     case ups: UnPublishService =>
       log.info(s"Received -> UnPublishService: $ups")
       val serviceEndpoint = publishers.get(ups.serviceName)
       publishers -= ups.serviceName
-      publishedVsNodeAddress -= ups.serviceName
       subscribers.filter(p => p._2.contains(ups.serviceName))
         .foreach(p => p._1 ! ServiceUnAvailable(ups.serviceName))
       serviceEndpoint.foreach(ep => considerForgetParticipant(ep))
@@ -123,12 +121,10 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
         .getOrElse(new mutable.HashSet[String]))
       considerForgetParticipant(sender())
 
-    case mr: MemberRemoved =>
-      log.info(s"Received -> MemberRemoved: $mr")
-      publishedVsNodeAddress.filter(p1 => p1._2 == mr.member.address).foreach(p2 => {
+    case terminated: Terminated =>
+      publishers.find(p => p._2 == terminated.getActor).foreach(p2 => {
         subscribers.filter(p3 => p3._2.contains(p2._1))
           .foreach(p4 => p4._1 ! ServiceUnAvailable(p2._1))
-        publishedVsNodeAddress -= p2._1
       })
 
     case sss: SaveSnapshotSuccess =>
