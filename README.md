@@ -28,13 +28,15 @@ Subscriber actors interact with the Akka Service Registry asking for dependent s
 
 Publisher actors withdraw their availability by:
 
-1. declaratively informing the registry of unavailability in response to tripped circuit breakers to outside web services 
+
+1. declaratively informing the reistry of unavailability in response to being told by the registry that one or more of its dependents are unavailable
+2. declaratively informing the registry of unavailability in response to tripped circuit breakers to outside web services 
 2. being deathwatch informed to the registry of termination after supervisior recovery max re-tries are exceeded
-3. or, are deathwatch informed to the registry of termination when their hosting cluster node fails
+3. being deathwatch informed to the registry of termination when their hosting cluster node fails
 
 As publisher actors are withdrawn, the registry informs subscriber actors of their unavailability.  This cascades across the cluster as dependent actors are denied their dependencies which in turn causes the dependent actors to become unavailable themselves. 
 
-When withdrawn service actors are re-introduced, subscribers are re-delivered their endpoint references and the  system self-heals into available states.
+When withdrawn service actors are re-introduced, subscribers are re-delivered their endpoint references and the  system self-heals into available service states.
 
 The registy cluster singleton is itself resilient to failure as it moves and recovers in response to hosting node failure.  This functionality is provided by the registry being persistent and informing publishers and subscribers of registry restart.  
 
@@ -48,7 +50,7 @@ We needed a way to manage dependencies to and between actors that implement or e
 Design considerations
 ----------
 </a>
-Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocols to these microservice are not json over http but are remoted serialized messages in the traditional Akka way.
+Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocols to these microservice are not typical web service json payloads over http but are Akka-remoted serialized messages in the traditional Akka way.
 
 Traditional service discovery mechanims such as Etcd and Consul are suitable for web services - not actor references.
 
@@ -157,7 +159,7 @@ Service client sends to ServiceRegistry when no longer requiring dependent servi
 
   	case class UnSubscribeToService(serviceName: String)
 
-<a> Akka Service Actor Registry:  </a>
+<a> Akka Service Registry:  </a>
 
 ServiceRegistry sends to service client when subscribed to service is now online.
 
@@ -190,7 +192,7 @@ See unit test: `com.comcast.csv.akka.serviceregistry.TestServiceRegistry`
 
 Automated cluster level tests and in particular service and registry recovery testing is not yet developed. Have tested service and registry recovery manually by: 
 
-1. Stopping node that is hosting the registry, observing it restarting on another node and sending RegistryHasRestarted messages to all previous publishers and subscribers.
+1. Stopping cluster node that is hosting the registry, observing it restarting on another node and sending RegistryHasRestarted messages to all previous publishers and subscribers.
 2. Stopping a service actor hosting node, observing the registry dispatching ServiceUnavailable messages to all of its subscribers.
 3. Re-starting a stopped service actor hosting node, observing the registry dispatching ServiceAvailable messages to its subscribers.
 
