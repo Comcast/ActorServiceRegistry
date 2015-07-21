@@ -29,8 +29,8 @@ Subscriber actors interact with the Akka Service Registry asking for dependent s
 Publisher actors withdraw their availability by:
 
 
-1. declaratively informing the reistry of unavailability in response to being told by the registry that one or more of its dependents are unavailable
-2. declaratively informing the registry of unavailability in response to tripped circuit breakers to outside web services 
+1. declaratively informing the registry of unavailability in response to being told by the registry that one or more of its critical dependents are unavailable
+2. declaratively informing the registry of unavailability in response to tripped circuit breakers to critical outside web services 
 2. being deathwatch informed to the registry of termination after supervisior recovery max re-tries are exceeded
 3. being deathwatch informed to the registry of termination when their hosting cluster node fails
 
@@ -50,9 +50,9 @@ We needed a way to manage dependencies to and between actors that implement or e
 Design considerations
 ----------
 </a>
-Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocols to these microservice are not typical web service json payloads over http but are Akka-remoted serialized messages in the traditional Akka way.
+Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocols to these microservice are not web service json payloads over http but are Akka-remoted serialized messages in the traditional Akka way.
 
-Traditional service discovery mechanims such as Etcd and Consul are suitable for web services - not actor references.
+Traditional service discovery mechanisms such as Etcd and Consul are suitable for web services - not actor references.
 
 Service discovery mechanisms typically rely on clients polling for dependent service availability.  Actors enable a "call-back" interaction style that is asynchronous and dynamic.  We chose to leverage this capability in the Akka Service Registry.
 
@@ -69,30 +69,30 @@ Create the proxy to the Service Registry Singleton in your cluster node main met
 
 	object UserServiceNode {
 
-	def main(args: Array[String]): Unit = {
+	  def main(args: Array[String]): Unit = {
 
-      // Override the configuration of the port when specified as program argument
-      val port = if (args.isEmpty) "0" else args(0)
-      val config = ConfigFactory.parseString(s"akka.remote.netty.tcp.port=$port").
-        withFallback(ConfigFactory.parseString("akka.cluster.roles = [userService]")).
-        withFallback(ConfigFactory.load())
+        // Override the configuration of the port when specified as program argument
+        val port = if (args.isEmpty) "0" else args(0)
+        val config = ConfigFactory.parseString(s"akka.remote.netty.tcp.port=$port").
+          withFallback(ConfigFactory.parseString("akka.cluster.roles = [userService]")).
+          withFallback(ConfigFactory.load())
 
-      val system = ActorSystem("ClusterSystem", config)
+        val system = ActorSystem("ClusterSystem", config)
 
-      val registry = system.actorOf(ClusterSingletonProxy.props(
-        singletonPath = "/user/singleton/registry",
-        role = None),
-        name = "registryProxy")
+        val registry = system.actorOf(ClusterSingletonProxy.props(
+          singletonPath = "/user/singleton/registry",
+          role = None),
+          name = "registryProxy")
 
-      val userService = system.actorOf(Props[UserServiceEndpoint], UserService.endpointName)
-      userService ! InitializeUserServiceEndpoint(registry)
+        val userService = system.actorOf(Props[UserServiceEndpoint], UserService.endpointName)
+        userService ! InitializeUserServiceEndpoint(registry)
 
-      val cloudAuthService = system.actorOf(Props[CloudAuthServiceEndpoint], CloudAuthService.endpointName)
-      cloudAuthService ! InitializeCloudAuthServiceEndpoint(registry)
+        val cloudAuthService = system.actorOf(Props[CloudAuthServiceEndpoint], CloudAuthService.endpointName)
+        cloudAuthService ! InitializeCloudAuthServiceEndpoint(registry)
 	  }
 	}
 
-In your service receive method tell the registry your subscriptions and then field ServiceAvailable messages from it.  After the dependencies have been delivered tell the registry you are available by sending a PublishService message.  
+In your service actor receive method tell the registry your subscriptions and then field ServiceAvailable messages from it.  After the dependencies have been delivered tell the registry you are available by sending a PublishService message.  
 
 FSM implementors should begin in an offline state and then transition to online after the dependencies have been delivered.
 
