@@ -1,6 +1,6 @@
 package com.comcast.csv.akka.serviceregistry
 
-import akka.actor.{AddressFromURIString, ActorRef, Props}
+import akka.actor._
 import SampleServiceProtocol._
 import com.comcast.csv.common.actors.{StackableCountingActor, StackableLoggingActor, StackableTimingActor}
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
@@ -17,13 +17,13 @@ object SampleService {
  *
  * @author dbolene
  */
-class SampleService extends StackableTimingActor with StackableCountingActor with StackableLoggingActor {
+class SampleService extends Actor with ActorLogging {
 
   var serviceName: Option[String] = None
   var registry: Option[ActorRef] = None
   var dependentServices = new scala.collection.mutable.HashMap[String, ActorRef]
 
-  override def wrappedReceive = {
+  override def receive = {
 
     case initialize: SampleServiceInitialize =>
       serviceName = Option(initialize.serviceName)
