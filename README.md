@@ -5,7 +5,7 @@ Table of Contents
  * [What is it](#what)
  * [Description](#description)
  * [Why we made it](#why)
- * [How we made it](#how)
+ * [Design Considerations](#how)
  * [Usage](#usage)
  * [QA](#qa)
  * [Operations](#ops)
@@ -13,7 +13,8 @@ Table of Contents
 
 
 <a name="what">
-### What is it? ###
+What is it?
+--------
 </a>
 A microservice actor discovery service for Akka clusters.
 
@@ -38,18 +39,20 @@ When withdrawn service actors are re-introduced, subscribers are re-delivered th
 The registy cluster singleton is itself resilient to failure as it moves and recovers in response to hosting node failure.  This functionality is provided by the registry being persistent and informing publishers and subscribers of registry restart.  
 
 <a name="why">
-### Why'd we make it? ###
+Why'd we make it?
+-------
 </a>
 We needed a way to manage dependencies to and between actors that implement or encapsulate access to microservices across an Akka cluster.
 
 <a name="how">
-### Design considerations ###
+Design considerations
+----------
 </a>
-Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocol to these microservice are not json over http but are just remoted serialized messages in the traditional Akka way.
+Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocols to these microservice are not json over http but are remoted serialized messages in the traditional Akka way.
 
 Traditional service discovery mechanims such as Etcd and Consul are suitable for web services - not actor references.
 
-Service discovery mechanisms typically rely on clients polling for dependent service availability.  Actors enable a "call-back" style interaction that is asynchronous and dynamic.  We chose to leverage this capability in the Akka Service Registry.
+Service discovery mechanisms typically rely on clients polling for dependent service availability.  Actors enable a "call-back" interaction style that is asynchronous and dynamic.  We chose to leverage this capability in the Akka Service Registry.
 
 <a name="usage">
 Usage
@@ -98,8 +101,7 @@ FSM implementors should begin in an offline state and then transition to online 
   	  import CloudAuthServiceProtocol._
 
   	  var registry: Option[ActorRef] = None
-
-  	  var userService: Option[ActorRef] = None
+	  var userService: Option[ActorRef] = None
 
   	  def receive = {
 
@@ -119,7 +121,7 @@ FSM implementors should begin in an offline state and then transition to online 
               registry.foreach(r => 
                 r ! PublishService(serviceName = CloudAuthService.endpointName, serviceEndpoint = self))
             case unknownService =>
-            log.error(s"received PublishService for unknown service: $unknownService")
+              log.error(s"received ServiceAvailable for unknown service: $unknownService")
           }
 
         case sua: ServiceUnAvailable =>
@@ -128,11 +130,12 @@ FSM implementors should begin in an offline state and then transition to online 
               registry.foreach(r => r ! UnPublishService(serviceName = CloudAuthService.endpointName))
               userService = None
             case unknownService =>
+              log.error(s"received ServiceUnAvailable for unknown service: $unknownService")
       }
 	}
 	
 
-*Actor protocol:*
+### Actor protocol: ###
 
 <a> Service Implementor:  </a>
 
