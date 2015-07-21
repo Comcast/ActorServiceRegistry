@@ -1,4 +1,4 @@
-## Akka Service Actor Registry ##
+## Akka Service Registry ##
 
 Table of Contents
 
@@ -21,41 +21,118 @@ A microservice actor discovery service for Akka clusters.
 Description
 --------
 </a>
-The Akka Service Actor Registry is a cluster singleton that is used to discover microservice actors across an Akka cluster.  It serves as a dependency injection mechanism that asychronously and dynamically wires together dependencies between service consumers and service implementor actors.  
+The Akka Service Registry is a cluster singleton that is used to discover and resolve references to microservice actors across an Akka cluster.  It serves as a dependency injection mechanism that asychronously and dynamically wires together dependencies between service consumers and service implementor actors.  
 
-Subscriber actors interact with the Akka Service Actor Registry asking for dependent service actors.  Publisher actors interact with the Akka Service Actor Registry informing the registry of their availability.  When publisher actors register their availability, subscriber actors are delivered their endpoint references who in turn publish their availability as dependencies are supplied.  In this way, service actor availability cascades across the cluster.  
+Subscriber actors interact with the Akka Service Registry asking for dependent service actors.  Publisher actors interact with the Akka Service Registry informing the registry of their availability.  When publisher actors register their availability, subscriber actors are delivered their endpoint references who in turn publish their availability as their dependencies are supplied.  In this way, service actor availability cascades across the cluster.  
 
 Publisher actors withdraw their availability by:
 
 1. declaratively informing the registry of unavailability in response to tripped circuit breakers to outside web services 
-2. are deathwatch informed of termination after supervisior recovery max re-tries are exceeded
-3. or, are deathwatch informated of termination when their hosting cluster node fails
+2. being deathwatch informed to the registry of termination after supervisior recovery max re-tries are exceeded
+3. or, are deathwatch informed to the registry of termination when their hosting cluster node fails
 
 As publisher actors are withdrawn, the registry informs subscriber actors of their unavailability.  This cascades across the cluster as dependent actors are denied their dependencies which in turn causes the dependent actors to become unavailable themselves. 
 
-When withdrawn service actors are re-introduced, subscribers are re-delivered their endpoint references and the overall system self-heals.
+When withdrawn service actors are re-introduced, subscribers are re-delivered their endpoint references and the  system self-heals into available states.
 
 The registy cluster singleton is itself resilient to failure as it moves and recovers in response to hosting node failure.  This functionality is provided by the registry being persistent and informing publishers and subscribers of registry restart.  
 
 <a name="why">
 ### Why'd we make it? ###
 </a>
-We needed a way to manage dependencies to and between actors that implement micro-services across an Akka cluster.
+We needed a way to manage dependencies to and between actors that implement or encapsulate access to microservices across an Akka cluster.
 
 <a name="how">
 ### Design considerations ###
 </a>
-Microservices in an Akka Cluster are implemented as Actors running in specific cluster nodes.
+Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocol to these microservice are not json over http but are just remoted serialized messages in the traditional Akka way.
 
 Traditional service discovery mechanims such as Etcd and Consul are suitable for web services - not actor references.
 
-Service discovery mechanisms typically rely on clients polling for dependent service availability.  Actors enable a "call-back" style interaction that is asynchronous and dynamic.  We chose to leverage this capability in the Akka Service Actor Registry.
+Service discovery mechanisms typically rely on clients polling for dependent service availability.  Actors enable a "call-back" style interaction that is asynchronous and dynamic.  We chose to leverage this capability in the Akka Service Registry.
 
 <a name="usage">
 Usage
 --------
 </a>
-Actor protocol:
+
+Add a reference to the Akka Service Registry in your cluster node project build.sbt:
+
+	tbd
+
+Create the proxy to the Service Registry Singleton in your cluster node main method. Pass the reference into your service initializers.
+
+	object UserServiceNode {
+
+	def main(args: Array[String]): Unit = {
+
+      // Override the configuration of the port when specified as program argument
+      val port = if (args.isEmpty) "0" else args(0)
+      val config = ConfigFactory.parseString(s"akka.remote.netty.tcp.port=$port").
+        withFallback(ConfigFactory.parseString("akka.cluster.roles = [userService]")).
+        withFallback(ConfigFactory.load())
+
+      val system = ActorSystem("ClusterSystem", config)
+
+      val registry = system.actorOf(ClusterSingletonProxy.props(
+        singletonPath = "/user/singleton/registry",
+        role = None),
+        name = "registryProxy")
+
+      val userService = system.actorOf(Props[UserServiceEndpoint], UserService.endpointName)
+      userService ! InitializeUserServiceEndpoint(registry)
+
+      val cloudAuthService = system.actorOf(Props[CloudAuthServiceEndpoint], CloudAuthService.endpointName)
+      cloudAuthService ! InitializeCloudAuthServiceEndpoint(registry)
+	  }
+	}
+
+In your service receive method tell the registry your subscriptions and then field ServiceAvailable messages from it.  After the dependencies have been delivered tell the registry you are available by sending a PublishService message.  
+
+FSM implementors should begin in an offline state and then transition to online after the dependencies have been delivered.
+
+	class CloudAuthServiceEndpoint extends Actor {
+
+  	  import AuthorizationProtocol._
+  	  import CloudAuthServiceEndpointInternalProtocol._
+  	  import CloudAuthServiceProtocol._
+
+  	  var registry: Option[ActorRef] = None
+
+  	  var userService: Option[ActorRef] = None
+
+  	  def receive = {
+
+        case init: InitializeCloudAuthServiceEndpoint =>
+          registry = Option(init.registry)
+          registry.foreach(r => r ! SubscribeToService(UserService.endpointName))
+
+        case registryHasRestarted: RegistryHasRestarted =>
+          registry = Option(registryHasRestarted.registry)
+          userService = None
+          registry.foreach(r => r ! SubscribeToService(UserService.endpointName))
+
+        case sa: ServiceAvailable =>
+          sa.serviceName match {
+            case UserService.endpointName =>
+              userService = Option(sa.serviceEndpoint)
+              registry.foreach(r => 
+                r ! PublishService(serviceName = CloudAuthService.endpointName, serviceEndpoint = self))
+            case unknownService =>
+            log.error(s"received PublishService for unknown service: $unknownService")
+          }
+
+        case sua: ServiceUnAvailable =>
+          sua.serviceName match {
+            case UserService.endpointName =>
+              registry.foreach(r => r ! UnPublishService(serviceName = CloudAuthService.endpointName))
+              userService = None
+            case unknownService =>
+      }
+	}
+	
+
+*Actor protocol:*
 
 <a> Service Implementor:  </a>
 
@@ -98,7 +175,7 @@ Operations
 --------
 </a>
 
-Configure akka persistence journal and snapshot stores in your application.conf.
+Configure Akka persistence journal and snapshot stores in your application.conf.
 
 Logs to ActorLogging.  Configure appropriately.
 
@@ -108,7 +185,7 @@ Quality Assurance
 </a>
 See unit test: `com.comcast.csv.akka.serviceregistry.TestServiceRegistry`
 
-Automated cluster recovery test is not yet developed. Have tested it manually by: 
+Automated cluster level tests and in particular service and registry recovery testing is not yet developed. Have tested service and registry recovery manually by: 
 
 1. Stopping node that is hosting the registry, observing it restarting on another node and sending RegistryHasRestarted messages to all previous publishers and subscribers.
 2. Stopping a service actor hosting node, observing the registry dispatching ServiceUnavailable messages to all of its subscribers.
