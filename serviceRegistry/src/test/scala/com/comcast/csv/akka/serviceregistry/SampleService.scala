@@ -2,7 +2,6 @@ package com.comcast.csv.akka.serviceregistry
 
 import akka.actor._
 import SampleServiceProtocol._
-import com.comcast.csv.common.actors.{StackableCountingActor, StackableLoggingActor, StackableTimingActor}
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
 
 
