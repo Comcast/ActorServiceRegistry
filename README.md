@@ -96,7 +96,7 @@ In your service actor receive method tell the registry your subscriptions and th
 
 FSM implementors should begin in an offline state and then transition to online after the dependencies have been delivered.
 
-	class CloudAuthServiceEndpoint extends Actor {
+	class CloudAuthServiceEndpoint extends Actor with ActorLogging {
 
   	  import AuthorizationProtocol._
   	  import CloudAuthServiceEndpointInternalProtocol._
