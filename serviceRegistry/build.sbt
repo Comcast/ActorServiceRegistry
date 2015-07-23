@@ -54,8 +54,3 @@ libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % akkaVersion exclu
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
 libraryDependencies += "com.typesafe.akka" % "akka-testkit_2.11" % akkaVersion % "test"
-
-libraryDependencies += "nl.grons" %% "metrics-scala" % "3.3.0_a2.3" excludeAll (ExclusionRule(organization = "com.typesafe.akka"))
-
-libraryDependencies +=  "joda-time" % "joda-time" % "2.7"
-
