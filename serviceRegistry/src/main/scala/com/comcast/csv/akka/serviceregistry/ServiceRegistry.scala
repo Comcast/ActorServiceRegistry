@@ -14,8 +14,6 @@ object ServiceRegistry {
 
   def props = Props[ServiceRegistry]
 
-  def propsControllingRecovery(bypassRestartNotification: Boolean) = Props(classOf[ServiceRegistry], bypassRestartNotification)
-
   val identity = "serviceRegistry"
 }
 
