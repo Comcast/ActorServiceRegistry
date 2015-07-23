@@ -69,12 +69,15 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
     case add: AddSubscriberPublisher =>
       log.info(s"Received -> AddSubscriberPublisher: $add")
       recordSubscriberPublisher(add)
+
     case remove: RemoveSubscriberPublisher =>
       log.info(s"Received -> RemoveSubscriberPublisher: $remove")
       unrecordSubscriberPublisher(remove)
+
     case SnapshotOffer(_, snapshot: SnapshotAfterRecover) =>
       log.info(s"Received -> SnapshotOffer")
     // do nothing
+
     case RecoveryCompleted =>
       log.info(s"Received -> RecoveryCompleted")
       val registryHasRestarted = RegistryHasRestarted(self)
