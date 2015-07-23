@@ -1,8 +1,6 @@
 package com.comcast.csv.akka.serviceregistry
 
 import akka.actor._
-import akka.cluster.Cluster
-import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberRemoved}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SaveSnapshotSuccess, SnapshotOffer}
 import com.comcast.csv.akka.serviceregistry.ServiceRegistryInternalProtocol.End
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
@@ -15,6 +13,7 @@ import scala.collection.mutable
 object ServiceRegistry {
 
   def props = Props[ServiceRegistry]
+
   def propsControllingRecovery(bypassRestartNotification: Boolean) = Props(classOf[ServiceRegistry], bypassRestartNotification)
 
   val identity = "serviceRegistry"
@@ -25,9 +24,7 @@ object ServiceRegistry {
  *
  * @author dbolene
  */
-class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActor with ActorLogging {
-
-  def this() = this(false)
+class ServiceRegistry extends PersistentActor with ActorLogging {
 
   // [aSubscriberOrPublisher]
   val subscribersPublishers = scala.collection.mutable.Set.empty[ActorRef]
@@ -59,7 +56,7 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
 
     def isSubscriberPublisherStillInUse(subpub: ActorRef): Boolean = {
       subscribers.contains(subpub) ||
-      publishers.exists {case (serviceName, endPoint) => endPoint == subpub}
+        publishers.exists { case (serviceName, endPoint) => endPoint == subpub }
     }
 
     if (subscribersPublishers.contains(participant) && !isSubscriberPublisherStillInUse(participant)) {
@@ -81,7 +78,7 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
     case RecoveryCompleted =>
       log.info(s"Received -> RecoveryCompleted")
       val registryHasRestarted = RegistryHasRestarted(self)
-      if(!bypassRestartNotification) subscribersPublishers.foreach(sp => sp ! registryHasRestarted)
+      subscribersPublishers.foreach(sp => sp ! registryHasRestarted)
       subscribersPublishers.clear()
       saveSnapshot(SnapshotAfterRecover())
   }
@@ -108,8 +105,8 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
       log.info(s"Received -> SubscribeToService: $ss")
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
-            s + ss.serviceName
-          })
+        s + ss.serviceName
+      })
         .getOrElse(new mutable.HashSet[String]))
       publishers.filter(p => p._1 == ss.serviceName)
         .foreach(p => sender() ! ServiceAvailable(ss.serviceName, p._2))

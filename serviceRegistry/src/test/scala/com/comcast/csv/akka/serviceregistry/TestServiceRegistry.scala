@@ -5,6 +5,7 @@ import akka.testkit.{DefaultTimeout, TestKit, ImplicitSender}
 import com.comcast.csv.akka.serviceregistry.SampleServiceProtocol._
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
 import org.scalatest._
+import scala.concurrent.duration._
 
 /**
  * Unit test the ServiceRegistry.
@@ -21,7 +22,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
+        val registry = system.actorOf(ServiceRegistry.props)
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -30,7 +31,10 @@ with ImplicitSender with BeforeAndAfterAll {
         // subscribe to the sample service
         registry ! SubscribeToService("sampleService")
 
-        expectMsg(ServiceAvailable(serviceName = "sampleService", serviceEndpoint = aSampleService))
+        fishForMessage(5 seconds, "hint"){
+          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case _ => false
+        }
 
         registry ! PoisonPill
         aSampleService ! PoisonPill
@@ -43,7 +47,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
+        val registry = system.actorOf(ServiceRegistry.props)
 
         // subscribe to the sample service before it is started
         registry ! SubscribeToService("sampleService")
@@ -52,7 +56,10 @@ with ImplicitSender with BeforeAndAfterAll {
         val aSampleService = system.actorOf(SampleService.props)
         aSampleService ! SampleServiceInitialize(serviceName = "sampleService", registry = registry)
 
-        expectMsg(ServiceAvailable(serviceName = "sampleService", serviceEndpoint = aSampleService))
+        fishForMessage(5 seconds, "hint"){
+          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case _ => false
+        }
 
         registry ! PoisonPill
         aSampleService ! PoisonPill
@@ -66,7 +73,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceUnAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
+        val registry = system.actorOf(ServiceRegistry.props)
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -75,7 +82,10 @@ with ImplicitSender with BeforeAndAfterAll {
         // subscribe to the sample service
         registry ! SubscribeToService("sampleService")
 
-        expectMsg(ServiceAvailable(serviceName = "sampleService", serviceEndpoint = aSampleService))
+        fishForMessage(5 seconds, "hint"){
+          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case _ => false
+        }
 
         // tell the sample service to go offline
         aSampleService ! GoOffline
@@ -93,7 +103,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceUnAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
+        val registry = system.actorOf(ServiceRegistry.props)
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -102,7 +112,10 @@ with ImplicitSender with BeforeAndAfterAll {
         // subscribe to the sample service
         registry ! SubscribeToService("sampleService")
 
-        expectMsg(ServiceAvailable(serviceName = "sampleService", serviceEndpoint = aSampleService))
+        fishForMessage(5 seconds, "hint"){
+          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case _ => false
+        }
 
         // tell the sample service to go offline
         aSampleService ! PoisonPill
