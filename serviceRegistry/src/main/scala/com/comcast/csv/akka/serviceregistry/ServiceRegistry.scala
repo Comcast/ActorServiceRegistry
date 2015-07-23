@@ -135,7 +135,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       log.info(s"Received -> End")
 
     case msg =>
-      log.info(s"Received unknown message: $msg")
+      log.warning(s"Received unknown message: $msg")
   }
 }
 
