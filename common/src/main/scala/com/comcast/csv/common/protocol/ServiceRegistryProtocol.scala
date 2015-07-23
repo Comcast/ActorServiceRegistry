@@ -1,6 +1,6 @@
 package com.comcast.csv.common.protocol
 
-import akka.actor.{Address, ActorRef}
+import akka.actor.ActorRef
 
 /**
  * Protocol for interacting with the Service Registry.
