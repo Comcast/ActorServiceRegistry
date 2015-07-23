@@ -7,6 +7,7 @@ import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
 import org.scalatest._
 
 /**
+ * Unit test the ServiceRegistry.
  *
  * @author dbolene
  */
@@ -20,7 +21,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -42,7 +43,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
 
         // subscribe to the sample service before it is started
         registry ! SubscribeToService("sampleService")
@@ -65,7 +66,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceUnAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -74,14 +75,10 @@ with ImplicitSender with BeforeAndAfterAll {
         // subscribe to the sample service
         registry ! SubscribeToService("sampleService")
 
-
-
         expectMsg(ServiceAvailable(serviceName = "sampleService", serviceEndpoint = aSampleService))
 
         // tell the sample service to go offline
         aSampleService ! GoOffline
-
-
 
         expectMsg(ServiceUnAvailable(serviceName = "sampleService"))
 
@@ -96,7 +93,7 @@ with ImplicitSender with BeforeAndAfterAll {
       "respond with a ServiceUnAvailable msg" in {
 
         // start the registry
-        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(true))
+        val registry = system.actorOf(ServiceRegistry.propsControllingRecovery(bypassRestartNotification = true))
 
         // start a sample service
         val aSampleService = system.actorOf(SampleService.props)
@@ -104,8 +101,6 @@ with ImplicitSender with BeforeAndAfterAll {
 
         // subscribe to the sample service
         registry ! SubscribeToService("sampleService")
-
-
 
         expectMsg(ServiceAvailable(serviceName = "sampleService", serviceEndpoint = aSampleService))
 

@@ -4,6 +4,7 @@ import akka.actor._
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberRemoved}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SaveSnapshotSuccess, SnapshotOffer}
+import com.comcast.csv.akka.serviceregistry.ServiceRegistryInternalProtocol.End
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
 
 import scala.collection.mutable
@@ -122,6 +123,7 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
       considerForgetParticipant(sender())
 
     case terminated: Terminated =>
+      log.info(s"Received -> Terminated: $terminated")
       publishers.find(p => p._2 == terminated.getActor).foreach(p2 => {
         subscribers.filter(p3 => p3._2.contains(p2._1))
           .foreach(p4 => p4._1 ! ServiceUnAvailable(p2._1))
@@ -129,6 +131,9 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
 
     case sss: SaveSnapshotSuccess =>
       log.info(s"Received -> SaveSnapshotSuccess: $sss")
+
+    case End =>
+      log.info(s"Received -> End")
 
     case msg =>
       log.info(s"Received unknown message: $msg")
