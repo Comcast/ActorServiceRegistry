@@ -36,7 +36,7 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
   // Map[published,publisher]
   val publishers = scala.collection.mutable.HashMap.empty[String, ActorRef]
 
-  log.info(s"=================== ServiceRegistry created")
+  log.info(s"=================== ServiceRegistry created ===================")
 
   override val persistenceId: String = ServiceRegistry.identity
 
@@ -58,9 +58,8 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
   def considerForgetParticipant(participant: ActorRef): Unit = {
 
     def isSubscriberPublisherStillInUse(subpub: ActorRef): Boolean = {
-      if (subscribers.contains(subpub)) return true
-      if (publishers.exists(p => p._2 == subpub)) return true
-      false
+      subscribers.contains(subpub) ||
+      publishers.exists {case (serviceName, endPoint) => endPoint == subpub}
     }
 
     if (subscribersPublishers.contains(participant) && !isSubscriberPublisherStillInUse(participant)) {
@@ -73,6 +72,9 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
     case add: AddSubscriberPublisher =>
       log.info(s"Received -> AddSubscriberPublisher: $add")
       recordSubscriberPublisher(add)
+    case remove: RemoveSubscriberPublisher =>
+      log.info(s"Received -> RemoveSubscriberPublisher: $remove")
+      unrecordSubscriberPublisher(remove)
     case SnapshotOffer(_, snapshot: SnapshotAfterRecover) =>
       log.info(s"Received -> SnapshotOffer")
     // do nothing
@@ -97,7 +99,7 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
     case ups: UnPublishService =>
       log.info(s"Received -> UnPublishService: $ups")
       val serviceEndpoint = publishers.get(ups.serviceName)
-      publishers -= ups.serviceName
+      publishers.remove(ups.serviceName)
       subscribers.filter(p => p._2.contains(ups.serviceName))
         .foreach(p => p._1 ! ServiceUnAvailable(ups.serviceName))
       serviceEndpoint.foreach(ep => considerForgetParticipant(ep))
@@ -106,8 +108,8 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
       log.info(s"Received -> SubscribeToService: $ss")
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
-        s + ss.serviceName
-      })
+            s + ss.serviceName
+          })
         .getOrElse(new mutable.HashSet[String]))
       publishers.filter(p => p._1 == ss.serviceName)
         .foreach(p => sender() ! ServiceAvailable(ss.serviceName, p._2))
