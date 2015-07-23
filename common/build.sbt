@@ -45,8 +45,6 @@ libraryDependencies += "com.typesafe.akka" % "akka-slf4j_2.11" % akkaVersion
 
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence-experimental" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
-libraryDependencies += "com.github.krasserm" %% "akka-persistence-cassandra" % "0.3.7" excludeAll (ExclusionRule(organization = "com.codahale.metrics"))
-
 libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
