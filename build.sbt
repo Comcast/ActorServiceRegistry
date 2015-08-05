@@ -1,11 +1,14 @@
 import sbt._
 import Keys._
+import gumby.build.{Common}
 
-organization := "com.comcast"
+Common.commonSettings
+
+organization := "com.comcast.csv"
 
 name := "AkkaServiceRegistry"
 
-version := "0.1-SNAPSHOT"
+version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.6"
 
