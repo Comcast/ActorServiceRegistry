@@ -22,3 +22,5 @@ lazy val serviceRegistry = Project(id = "serviceRegistry",
 lazy val root = Project(id = "root",
                             base = file("."))
                             .aggregate(common, serviceRegistry)
+
+
