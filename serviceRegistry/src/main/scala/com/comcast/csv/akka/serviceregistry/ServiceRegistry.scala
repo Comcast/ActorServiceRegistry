@@ -32,6 +32,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
   val publishers = scala.collection.mutable.HashMap.empty[String, ActorRef]
 
   log.info(s"=================== ServiceRegistry created ===================")
+  System.out.println(s"=================== ServiceRegistry created ===================")
 
   override val persistenceId: String = ServiceRegistry.identity
 
