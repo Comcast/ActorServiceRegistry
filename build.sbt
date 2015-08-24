@@ -5,9 +5,9 @@ organization := "com.comcast"
 
 name := "AkkaServiceRegistry"
 
-version := "0.1-SNAPSHOT"
-
 scalaVersion := "2.11.6"
+
+version := "1.0-SNAPSHOT"
 
 lazy val common = Project(id = "common",
                             base = file("common"))
