@@ -1,6 +1,6 @@
 package com.comcast.csv.common.protocol
 
-import akka.actor.{Address, ActorRef}
+import akka.actor.ActorRef
 
 /**
  * Protocol for interacting with the Service Registry.
@@ -34,7 +34,8 @@ object ServiceRegistryProtocol {
    */
   case class ServiceUnAvailable(serviceName: String)
   /**
-   * ServiceRegistry sends to publishers and subscribers when ServiceRegistry has been restarted requiring all participants to re-subscribe and re-publish.
+   * ServiceRegistry sends to publishers and subscribers when ServiceRegistry has been restarted
+   *   requiring all participants to re-subscribe and re-publish.
    */
   case class RegistryHasRestarted(registry: ActorRef)
 
