@@ -62,3 +62,10 @@ libraryDependencies += "nl.grons" %% "metrics-scala" % "3.3.0_a2.3" excludeAll (
 
 libraryDependencies +=  "joda-time" % "joda-time" % "2.7"
 
+
+artifact in (Compile, assembly) := {
+  val art = (artifact in (Compile, assembly)).value
+  art.copy(`classifier` = Some("assembly"))
+}
+
+addArtifact(artifact in (Compile, assembly), assembly)

@@ -1,8 +1,6 @@
 package com.comcast.csv.akka.serviceregistry
 
 import akka.actor._
-import akka.cluster.Cluster
-import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberRemoved}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SaveSnapshotSuccess, SnapshotOffer}
 import com.comcast.csv.akka.serviceregistry.ServiceRegistryInternalProtocol.End
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
@@ -15,7 +13,6 @@ import scala.collection.mutable
 object ServiceRegistry {
 
   def props = Props[ServiceRegistry]
-  def propsControllingRecovery(bypassRestartNotification: Boolean) = Props(classOf[ServiceRegistry], bypassRestartNotification)
 
   val identity = "serviceRegistry"
 }
@@ -25,9 +22,7 @@ object ServiceRegistry {
  *
  * @author dbolene
  */
-class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActor with ActorLogging {
-
-  def this() = this(false)
+class ServiceRegistry extends PersistentActor with ActorLogging {
 
   // [aSubscriberOrPublisher]
   val subscribersPublishers = scala.collection.mutable.Set.empty[ActorRef]
@@ -36,7 +31,8 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
   // Map[published,publisher]
   val publishers = scala.collection.mutable.HashMap.empty[String, ActorRef]
 
-  log.info(s"=================== ServiceRegistry created")
+  log.info(s"=================== ServiceRegistry created ===================")
+  System.out.println(s"=================== ServiceRegistry created ===================")
 
   override val persistenceId: String = ServiceRegistry.identity
 
@@ -58,9 +54,8 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
   def considerForgetParticipant(participant: ActorRef): Unit = {
 
     def isSubscriberPublisherStillInUse(subpub: ActorRef): Boolean = {
-      if (subscribers.contains(subpub)) return true
-      if (publishers.exists(p => p._2 == subpub)) return true
-      false
+      subscribers.contains(subpub) ||
+        publishers.exists { case (serviceName, endPoint) => endPoint == subpub }
     }
 
     if (subscribersPublishers.contains(participant) && !isSubscriberPublisherStillInUse(participant)) {
@@ -73,13 +68,19 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
     case add: AddSubscriberPublisher =>
       log.info(s"Received -> AddSubscriberPublisher: $add")
       recordSubscriberPublisher(add)
+
+    case remove: RemoveSubscriberPublisher =>
+      log.info(s"Received -> RemoveSubscriberPublisher: $remove")
+      unrecordSubscriberPublisher(remove)
+
     case SnapshotOffer(_, snapshot: SnapshotAfterRecover) =>
       log.info(s"Received -> SnapshotOffer")
     // do nothing
+
     case RecoveryCompleted =>
       log.info(s"Received -> RecoveryCompleted")
       val registryHasRestarted = RegistryHasRestarted(self)
-      if(!bypassRestartNotification) subscribersPublishers.foreach(sp => sp ! registryHasRestarted)
+      subscribersPublishers.foreach(sp => sp ! registryHasRestarted)
       subscribersPublishers.clear()
       saveSnapshot(SnapshotAfterRecover())
   }
@@ -97,7 +98,7 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
     case ups: UnPublishService =>
       log.info(s"Received -> UnPublishService: $ups")
       val serviceEndpoint = publishers.get(ups.serviceName)
-      publishers -= ups.serviceName
+      publishers.remove(ups.serviceName)
       subscribers.filter(p => p._2.contains(ups.serviceName))
         .foreach(p => p._1 ! ServiceUnAvailable(ups.serviceName))
       serviceEndpoint.foreach(ep => considerForgetParticipant(ep))
@@ -136,7 +137,7 @@ class ServiceRegistry(bypassRestartNotification: Boolean) extends PersistentActo
       log.info(s"Received -> End")
 
     case msg =>
-      log.info(s"Received unknown message: $msg")
+      log.warning(s"Received unknown message: $msg")
   }
 }
 
