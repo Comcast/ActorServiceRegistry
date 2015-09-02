@@ -1,4 +1,22 @@
-## Akka Service Registry ##
+```
+/**
+ * Copyright  2015  Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+```
+
+## Service Registry for Akka ##
 
 Table of Contents
 
@@ -22,9 +40,9 @@ A microservice actor discovery service for Akka clusters.
 Description
 --------
 </a>
-The Akka Service Registry is a cluster singleton that is used to discover and resolve references to microservice actors across an Akka cluster.  It serves as a dependency injection mechanism that asychronously and dynamically wires together dependencies between service consumers and service implementor actors.  
+The Service Registry for Akka is a cluster singleton that is used to discover and resolve references to microservice actors across an Akka cluster.  It serves as a dependency injection mechanism that asychronously and dynamically wires together dependencies between service consumers and service implementor actors.  
 
-Subscriber actors interact with the Akka Service Registry asking for dependent service actors.  Publisher actors interact with the Akka Service Registry informing the registry of their availability.  When publisher actors register their availability, subscriber actors are delivered their endpoint references who in turn publish their availability as their dependencies are supplied.  In this way, service actor availability cascades across the cluster.  
+Subscriber actors interact with the Service Registry for Akka asking for dependent service actors.  Publisher actors interact with the Service Registry for Akka informing the registry of their availability.  When publisher actors register their availability, subscriber actors are delivered their endpoint references who in turn publish their availability as their dependencies are supplied.  In this way, service actor availability cascades across the cluster.  
 
 Publisher actors withdraw their availability by:
 
@@ -50,18 +68,18 @@ We needed a way to manage dependencies to and between actors that implement or e
 Design considerations
 ----------
 </a>
-Microservices in an Akka Cluster are implemented as actors running in specific cluster nodes.  The protocols to these microservice are not web service json payloads over http but are Akka-remoted serialized messages in the traditional Akka way.
+Microservices in an Akka cluster are implemented as actors running in specific cluster nodes.  The protocols to these microservice are not web service json payloads over http but are Akka-remoted serialized messages in the traditional Akka way.
 
 Traditional service discovery mechanisms such as Etcd and Consul are suitable for web services - not actor references.
 
-Service discovery mechanisms typically rely on clients polling for dependent service availability.  Actors enable a "call-back" interaction style that is asynchronous and dynamic.  We chose to leverage this capability in the Akka Service Registry.
+Service discovery mechanisms typically rely on clients polling for dependent service availability.  Actors enable a "call-back" interaction style that is asynchronous and dynamic.  We chose to leverage this capability in the Service Registry for Akka.
 
 <a name="usage">
 Usage
 --------
 </a>
 
-Add a reference to the Akka Service Registry in your cluster node project build.sbt:
+Add a reference to the Service Registry for Akka in your cluster node project build.sbt:
 
 	tbd
 
@@ -94,7 +112,7 @@ Create the proxy to the Service Registry Singleton in your cluster node main met
 
 In your service actor receive method tell the registry your subscriptions and then field ServiceAvailable messages from it.  After the dependencies have been delivered tell the registry you are available by sending a PublishService message.  
 
-FSM implementors should begin in an offline state and then transition to online after the dependencies have been delivered.
+(FSM implementors should begin in an offline state and then transition to online after the dependencies have been delivered.)
 
 	class CloudAuthServiceEndpoint extends Actor with ActorLogging {
 
@@ -159,7 +177,7 @@ Service client sends to ServiceRegistry when no longer requiring dependent servi
 
   	case class UnSubscribeToService(serviceName: String)
 
-<a> Akka Service Registry:  </a>
+<a> Service Registry for Akka:  </a>
 
 ServiceRegistry sends to service client when subscribed to service is now online.
 
@@ -173,7 +191,7 @@ ServiceRegistry sends to publishers and subscribers when ServiceRegistry has bee
 
    	case class RegistryHasRestarted(registry: ActorRef)
 
-**Upon registry restart, all publishers and subsribers must re-publish and re-subscribe to the service registry.  This was implemented this way in order to avoid race conditions where failed registry hosting cluster node also was hosting service actors that failed at the same time.**
+**Upon registry restart, all publishers and subsribers must re-publish and re-subscribe to the service registry.  This was implemented this way in order to avoid race conditions where the failed registry hosting cluster node also was hosting service actors that failed at the same time.**
 
 <a name="ops">
 Operations
