@@ -1,0 +1,10 @@
+Actor Service Registry for Akka
+
+Developed by:
+-------------
+David Bolene - dbolene@yahoo.com
+
+
+Code Reviewed and tested by:
+----------------------------
+Val Apgar - Val_Apgar@cable.comcast.com
