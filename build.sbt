@@ -15,9 +15,6 @@
 //
 import sbt._
 import Keys._
-import gumby.build.{Common}
-
-Common.commonSettings
 
 organization := "com.comcast.csv"
 

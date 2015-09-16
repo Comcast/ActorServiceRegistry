@@ -13,11 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import gumby.build.Common
 import sbt._
 import Keys._
-
-Common.commonSettings
 
 organization := "com.comcast.csv"
 
@@ -43,23 +40,23 @@ libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value 
 
 libraryDependencies +=  slf4jOrg % "slf4j-api" % slf4jVersion
 
-libraryDependencies +=  slf4jOrg % "log4j-over-slf4j" % slf4jVersion
+libraryDependencies +=  slf4jOrg % "log4j-over-slf4j" % slf4jVersion % "test"
 
 libraryDependencies +=  slf4jOrg % "jcl-over-slf4j" % slf4jVersion % "test"
 
 libraryDependencies +=  slf4jOrg % "jul-to-slf4j" % slf4jVersion % "test"
 
-libraryDependencies +=  slf4jOrg % "slf4j-simple" % slf4jVersion
+libraryDependencies +=  slf4jOrg % "slf4j-simple" % slf4jVersion % "test"
 
-libraryDependencies += "com.typesafe.akka" % "akka-actor_2.11" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
-libraryDependencies += "com.typesafe.akka" % "akka-agent_2.11" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-agent" % akkaVersion
 
-libraryDependencies += "com.typesafe.akka" % "akka-remote_2.11" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-remote" % akkaVersion
 
-libraryDependencies += "com.typesafe.akka" % "akka-testkit_2.11" % akkaVersion % "test"
+libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
 
-libraryDependencies += "com.typesafe.akka" % "akka-slf4j_2.11" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence-experimental" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
@@ -71,7 +68,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % akkaVersion exclu
 
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
-libraryDependencies += "com.typesafe.akka" % "akka-testkit_2.11" % akkaVersion % "test"
+libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
 
 libraryDependencies += "nl.grons" %% "metrics-scala" % "3.3.0_a2.3" excludeAll (ExclusionRule(organization = "com.typesafe.akka"))
 
