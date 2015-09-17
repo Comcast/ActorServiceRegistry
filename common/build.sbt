@@ -18,7 +18,7 @@ import Keys._
 
 organization := "com.comcast.csv"
 
-name := "akka-service-registry-common"
+name := "actor-service-registry-common"
 
 version := "1.0-SNAPSHOT"
 
