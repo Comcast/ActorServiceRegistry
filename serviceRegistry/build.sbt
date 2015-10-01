@@ -16,7 +16,7 @@
 import sbt._
 import Keys._
 
-organization := "com.comcast.csv"
+organization := "com.comcast"
 
 name := "actor-service-registry"
 

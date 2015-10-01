@@ -16,9 +16,9 @@
 import sbt._
 import Keys._
 
-organization := "com.comcast.csv"
+organization := "com.comcast"
 
-name := "ActorServiceRegistry"
+name := "actor-service-registry-aggregate"
 
 version := "1.0-SNAPSHOT"
 
