@@ -81,7 +81,11 @@ Usage
 
 Add a reference to the Service Registry for Akka in your cluster node project build.sbt:
 
-	tbd
+<code>
+libraryDependencies +=  "com.comcast" %% "akka-service-registry" % "1.0"
+
+libraryDependencies +=  "com.comcast" %% "akka-service-registry-common" % "1.0"
+</code>
 
 Create the proxy to the Service Registry Singleton in your cluster node main method. Pass the reference into your service initializers.
 
