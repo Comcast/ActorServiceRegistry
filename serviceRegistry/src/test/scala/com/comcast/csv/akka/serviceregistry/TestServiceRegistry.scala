@@ -18,6 +18,7 @@ package com.comcast.csv.akka.serviceregistry
 import akka.actor.{PoisonPill, ActorSystem}
 import akka.testkit.{DefaultTimeout, TestKit, ImplicitSender}
 import com.comcast.csv.akka.serviceregistry.SampleServiceProtocol._
+import com.comcast.csv.common.protocol.ServiceProtocol.ServiceNotOnline
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
 import org.scalatest._
 import scala.concurrent.duration._
@@ -34,7 +35,7 @@ with ImplicitSender with BeforeAndAfterAll {
 
   "A ServiceRegistry actor" when {
     "created, a service is published, and a SubscribedTo is received" should {
-      "respond with a ServiceAvailable msg" in {
+      "respond with a ServiceChanged msg" in {
 
         // start the registry
         val registry = system.actorOf(ServiceRegistry.props)
@@ -47,7 +48,7 @@ with ImplicitSender with BeforeAndAfterAll {
         registry ! SubscribeToService("sampleService")
 
         fishForMessage(5 seconds, "hint"){
-          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case serviceChanged: ServiceChanged if serviceChanged.serviceEndpoint.contains(aSampleService) => true
           case _ => false
         }
 
@@ -59,7 +60,7 @@ with ImplicitSender with BeforeAndAfterAll {
 
   "A ServiceRegistry actor" when {
     "created, SubscribedTo is received, and a service is published" should {
-      "respond with a ServiceAvailable msg" in {
+      "respond with a ServiceChanged msg" in {
 
         // start the registry
         val registry = system.actorOf(ServiceRegistry.props)
@@ -72,7 +73,7 @@ with ImplicitSender with BeforeAndAfterAll {
         aSampleService ! SampleServiceInitialize(serviceName = "sampleService", registry = registry)
 
         fishForMessage(5 seconds, "hint"){
-          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case ServiceChanged("sampleService", a) if a.contains(aSampleService) => true
           case _ => false
         }
 
@@ -98,14 +99,21 @@ with ImplicitSender with BeforeAndAfterAll {
         registry ! SubscribeToService("sampleService")
 
         fishForMessage(5 seconds, "hint"){
-          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case ServiceChanged("sampleService", a) if a.contains(aSampleService) => true
           case _ => false
         }
 
         // tell the sample service to go offline
         aSampleService ! GoOffline
 
-        expectMsg(ServiceUnAvailable(serviceName = "sampleService"))
+        expectMsgPF() {
+          case serviceChanged: ServiceChanged =>
+            serviceChanged.serviceName == "sampleService"
+
+          case x =>
+            println(s"received $x")
+        }
+
 
         registry ! PoisonPill
         aSampleService ! PoisonPill
@@ -128,14 +136,18 @@ with ImplicitSender with BeforeAndAfterAll {
         registry ! SubscribeToService("sampleService")
 
         fishForMessage(5 seconds, "hint"){
-          case ServiceAvailable("sampleService", a) if a == aSampleService => true
+          case ServiceChanged("sampleService", a) if a.contains(aSampleService) => true
           case _ => false
         }
 
         // tell the sample service to go offline
         aSampleService ! PoisonPill
 
-        expectMsg(ServiceUnAvailable(serviceName = "sampleService"))
+        expectMsgPF() {
+          case serviceChanged: ServiceChanged =>
+            serviceChanged.serviceName == "sampleService"
+        }
+
 
         registry ! PoisonPill
       }

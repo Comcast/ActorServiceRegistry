@@ -20,7 +20,7 @@ organization := "com.comcast"
 
 name := "actor-service-registry-common"
 
-version := "1.0-SNAPSHOT"
+version := "1.0"
 
 scalaVersion := "2.11.6"
 
@@ -68,3 +68,35 @@ libraryDependencies += "nl.grons" %% "metrics-scala" % "3.3.0_a2.3" excludeAll (
 
 libraryDependencies +=  "joda-time" % "joda-time" % "2.7"
 
+
+pomIncludeRepository := { _ => false }
+
+publishArtifact in Test := false
+
+publishMavenStyle := true
+
+
+pomExtra := (
+  <url>https://github.com/Comcast/ActorServiceRegistry</url>
+    <licenses>
+      <license>
+        <name>Apache License, Version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        <distribution>repo</distribution>
+        <comments>A business-friendly OSS license</comments>
+      </license>
+    </licenses>
+
+    <scm>
+      <url>https://github.com/Comcast/ActorServiceRegistry</url>
+      <connection>https://github.com/Comcast/ActorServiceRegistry.git</connection>
+    </scm>
+    <developers>
+      <developer>
+        <name>David Bolene</name>
+      </developer>
+      <developer>
+        <name>Val Apgar</name>
+        <organization>Comcast</organization>
+      </developer>
+    </developers>)

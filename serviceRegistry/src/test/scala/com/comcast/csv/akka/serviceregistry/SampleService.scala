@@ -37,7 +37,8 @@ class SampleService extends Actor with ActorLogging {
 
   var serviceName: Option[String] = None
   var registry: Option[ActorRef] = None
-  var dependentServices = new scala.collection.mutable.HashMap[String, ActorRef]
+  var dependentServices = new scala.collection.mutable.HashMap[String, List[ActorRef]]
+  var routedMessageCount = 0
 
   override def receive = {
 
@@ -51,19 +52,17 @@ class SampleService extends Actor with ActorLogging {
       log.info(s"Received -> SampleServiceSubscribeTo: $ss")
       registry.foreach(r => r ! SubscribeToService(ss.serviceName))
 
-    case sa: ServiceAvailable =>
-      log.info(s"Received -> ServiceAvailable: $sa")
+    case sa: ServiceChanged =>
+      log.info(s"Received -> ServiceChanged: $sa")
       dependentServices += (sa.serviceName -> sa.serviceEndpoint)
-
-    case sua: ServiceUnAvailable =>
-      log.info(s"Received -> ServiceUnAvailable: $sua")
-      dependentServices -= sua.serviceName
 
     case GoOffline =>
       log.info(s"Received -> GoOffline")
-      registry.foreach(r => serviceName.foreach(name => r ! UnPublishService(name)))
+      registry.foreach(r => serviceName.foreach(name => r ! UnPublishService(name, self)))
 
     case msg =>
+      sender ! msg
+      routedMessageCount += 1
       log.warning(s"Received unknown message: $msg")
   }
 

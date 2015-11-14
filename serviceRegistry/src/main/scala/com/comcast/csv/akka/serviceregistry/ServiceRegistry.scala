@@ -19,6 +19,7 @@ import akka.actor._
 import akka.persistence.{PersistentActor, RecoveryCompleted, SaveSnapshotSuccess, SnapshotOffer}
 import com.comcast.csv.akka.serviceregistry.ServiceRegistryInternalProtocol.End
 import com.comcast.csv.common.protocol.ServiceRegistryProtocol._
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 
@@ -37,16 +38,17 @@ object ServiceRegistry {
  *
  * @author dbolene
  */
-class ServiceRegistry extends PersistentActor with ActorLogging {
+class ServiceRegistry extends PersistentActor {
+
+  val log = LoggerFactory.getLogger(this.getClass)
 
   // [aSubscriberOrPublisher]
-  val subscribersPublishers = scala.collection.mutable.Set.empty[ActorRef]
+  val subscribersPublishers = mutable.Set.empty[ActorRef]
   // Map[subscriber,Set[subscribedTo]]
-  val subscribers = scala.collection.mutable.HashMap.empty[ActorRef, mutable.HashSet[String]]
+  val subscribers = mutable.HashMap.empty[ActorRef, mutable.HashSet[String]]
   // Map[published,publisher]
-  val publishers = scala.collection.mutable.HashMap.empty[String, ActorRef]
+  val publishers = mutable.HashMap.empty[String, List[ActorRef]]
 
-  log.info(s"=================== ServiceRegistry created ===================")
 
   override val persistenceId: String = ServiceRegistry.identity
 
@@ -69,7 +71,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
 
     def isSubscriberPublisherStillInUse(subpub: ActorRef): Boolean = {
       subscribers.contains(subpub) ||
-        publishers.exists { case (serviceName, endPoint) => endPoint == subpub }
+        publishers.exists { case (serviceName, endPoint) => endPoint.contains(subpub) }
     }
 
     if (subscribersPublishers.contains(participant) && !isSubscriberPublisherStillInUse(participant)) {
@@ -101,48 +103,108 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
 
   override def receiveCommand: Receive = {
 
-    case ps: PublishService =>
-      log.info(s"Received -> PublishService: $ps")
-      publishers += (ps.serviceName -> ps.serviceEndpoint)
-      subscribers.filter(p => p._2.contains(ps.serviceName))
-        .foreach(p => p._1 ! ServiceAvailable(ps.serviceName, ps.serviceEndpoint))
-      context.watch(ps.serviceEndpoint)
-      considerRememberParticipant(ps.serviceEndpoint)
 
-    case ups: UnPublishService =>
-      log.info(s"Received -> UnPublishService: $ups")
-      val serviceEndpoint = publishers.get(ups.serviceName)
-      publishers.remove(ups.serviceName)
-      subscribers.filter(p => p._2.contains(ups.serviceName))
-        .foreach(p => p._1 ! ServiceUnAvailable(ups.serviceName))
-      serviceEndpoint.foreach(ep => considerForgetParticipant(ep))
+    case PublishService(serviceName, serviceEndpoint) =>
+      log.info(s"Received -> PublishService($serviceName, ${serviceEndpoint.path}) from ${sender().path}")
+
+      // Update the list of endpoints at this serviceName
+      val newPublishers = serviceEndpoint :: publishers.getOrElse(serviceName, List())
+      publishers += (serviceName -> newPublishers)
+
+      // Tell all the subscribers with this serviceName that it changed
+      subscribers.filter(p => p._2.contains(serviceName))
+        .foreach(p => p._1 ! ServiceChanged(serviceName, newPublishers))
+
+      // Watch the service so that we can react to failures
+      context.watch(serviceEndpoint)
+
+      // persist the endpoint so that we can recover
+      considerRememberParticipant(serviceEndpoint)
+
+
+    case UnPublishService(serviceName, serviceEndpoint) =>
+      log.info(s"Received -> UnPublishService($serviceName, ${serviceEndpoint.path}) from ${sender().path}")
+
+      val existingEndpoints = publishers.get(serviceName)
+
+      existingEndpoints foreach {
+        endpoints =>
+
+          log.debug(s"Found endpoints=$endpoints")
+          // Make out the new endpoints and verify that we have this publisher
+          val newEndpoints: List[ActorRef] = endpoints.filterNot(actor => actor == serviceEndpoint)
+          val publisherToRemove: Option[ActorRef] = endpoints.find(actor => actor == serviceEndpoint)
+
+          if (newEndpoints != endpoints) {
+
+            log.debug(s"New endpoints=$newEndpoints")
+
+            publisherToRemove foreach {
+              actor =>
+
+                // Tell the subscribers with this service that the service changed
+                for (subscriber <- subscribers) {
+                  if (subscriber._2.contains(serviceName)) {
+                    log.debug(s"notifying subscriber=${subscriber._1.path} of endpoint changes.")
+                    subscriber._1 ! ServiceChanged(serviceName, newEndpoints)
+                  }
+                }
+
+            }
+
+            // Update the endpoints
+            publishers += (serviceName -> newEndpoints)
+
+          }
+      }
+
+      // Forget this publisher since it's not in service any more
+      considerForgetParticipant(serviceEndpoint)
+
 
     case ss: SubscribeToService =>
-      log.info(s"Received -> SubscribeToService: $ss")
+      log.info(s"Received -> SubscribeToService(${ss.serviceName}) from ${sender().path}")
+
+      // Add this guy to the subscribers
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
         s + ss.serviceName
       })
         .getOrElse(new mutable.HashSet[String]))
+
+      // Find all the publishers of this service
+      // Then tell the subscribers about the service endpoints
       publishers.filter(p => p._1 == ss.serviceName)
-        .foreach(p => sender() ! ServiceAvailable(ss.serviceName, p._2))
+        .foreach(p => sender() ! ServiceChanged(ss.serviceName, p._2))
+
+      // Persist this subscriber so that we can recover
       considerRememberParticipant(sender())
 
+
     case us: UnSubscribeToService =>
-      log.info(s"Received -> UnSubscribeToService: $us")
+      log.info(s"Received -> UnSubscribeToService(${us.serviceName}) from ${sender().path}")
+
+      // Remove this subscriber
       subscribers += (sender() -> subscribers.get(sender())
         .orElse(Some(new mutable.HashSet[String])).map(s => {
         s - us.serviceName
       })
         .getOrElse(new mutable.HashSet[String]))
+
+      // persist the change
       considerForgetParticipant(sender())
 
     case terminated: Terminated =>
-      log.info(s"Received -> Terminated: $terminated")
-      publishers.find(p => p._2 == terminated.getActor).foreach(p2 => {
-        subscribers.filter(p3 => p3._2.contains(p2._1))
-          .foreach(p4 => p4._1 ! ServiceUnAvailable(p2._1))
-      })
+      log.info(s"Received -> Terminated(${terminated.getActor.path}) from ${sender().path}")
+
+      val terminatedActor = terminated.getActor()
+
+
+      // Un-publish the terminated service
+      for(publisher <- publishers
+          if publisher._2.contains(terminatedActor)) {
+            self forward UnPublishService(publisher._1, terminatedActor)
+          }
 
     case sss: SaveSnapshotSuccess =>
       log.info(s"Received -> SaveSnapshotSuccess: $sss")
@@ -151,7 +213,7 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
       log.info(s"Received -> End")
 
     case msg =>
-      log.warning(s"Received unknown message: $msg")
+      log.warn(s"Received unknown message: $msg")
   }
 }
 

@@ -20,9 +20,11 @@ organization := "com.comcast"
 
 name := "actor-service-registry-aggregate"
 
-version := "1.0-SNAPSHOT"
+version := "1.0"
 
 scalaVersion := "2.11.6"
+
+description := "Actor service registry for Akka"
 
 lazy val common = Project(id = "common",
                             base = file("common"))
@@ -35,4 +37,43 @@ lazy val root = Project(id = "root",
                             base = file("."))
                             .aggregate(common, serviceRegistry)
 
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
 
+
+pomIncludeRepository := { _ => false }
+
+publishArtifact in Test := false
+
+publishMavenStyle := true
+
+
+pomExtra := (
+  <url>https://github.com/Comcast/ActorServiceRegistry</url>
+    <licenses>
+      <license>
+        <name>Apache License, Version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        <distribution>repo</distribution>
+        <comments>A business-friendly OSS license</comments>
+      </license>
+    </licenses>
+
+    <scm>
+      <url>https://github.com/Comcast/ActorServiceRegistry</url>
+      <connection>https://github.com/Comcast/ActorServiceRegistry.git</connection>
+    </scm>
+    <developers>
+      <developer>
+        <name>David Bolene</name>
+      </developer>
+      <developer>
+        <name>Val Apgar</name>
+        <organization>Comcast</organization>
+      </developer>
+    </developers>)
