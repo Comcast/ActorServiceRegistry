@@ -22,9 +22,9 @@ name := "actor-service-registry-common"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
-val akkaVersion = "2.3.11"
+val akkaVersion = "2.4.4"
 
 val slf4jOrg = "org.slf4j"
 
@@ -58,7 +58,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "te
 
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 
-libraryDependencies += "com.typesafe.akka" %% "akka-persistence-experimental" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence" % akkaVersion
 
 libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % akkaVersion excludeAll (ExclusionRule(organization = "io.dropwizard.metrics"))
 
