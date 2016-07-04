@@ -142,6 +142,42 @@ with ImplicitSender with BeforeAndAfterAll {
     }
   }
 
+  "A ServiceRegistry actor" when {
+    "created, a service is published, and a RequestService is received" should {
+      "respond with a RespondService msg" in {
+
+        // start the registry
+        val registry = system.actorOf(ServiceRegistry.props)
+
+        // start a sample service
+        val aSampleService = system.actorOf(SampleService.props)
+        aSampleService ! SampleServiceInitialize(serviceName = "sampleService", registry = registry)
+
+        // request the sample service
+        registry ! RequestService("sampleService")
+
+        fishForMessage(5 seconds, "hint"){
+          case RespondService("sampleService", a) if a == aSampleService => true
+          case _ => false
+        }
+
+        // tell the sample service to go offline
+        aSampleService ! PoisonPill
+
+        // request the sample service
+        registry ! RequestService("sampleService")
+
+        fishForMessage(5 seconds, "hint"){
+          case RespondService("sampleService", a) if a == aSampleService => true
+          case _ => false
+        }
+
+
+        registry ! PoisonPill
+      }
+    }
+  }
+
   override def afterAll(): Unit = {
     shutdown(system)
   }
