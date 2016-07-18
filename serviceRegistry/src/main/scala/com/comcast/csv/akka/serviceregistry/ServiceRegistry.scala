@@ -137,6 +137,15 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
         .getOrElse(new mutable.HashSet[String]))
       considerForgetParticipant(sender())
 
+    case rs: RequestService =>
+      log.info(s"Received -> RequestService: $rs")
+      publishers.find(p => p._1 == rs.serviceName) match {
+        case Some(svc) =>
+          sender() ! RespondService(rs.serviceName, svc._2)
+        case None =>
+          sender() ! RespondServiceUnAvailable(rs.serviceName)
+      }
+
     case terminated: Terminated =>
       log.info(s"Received -> Terminated: $terminated")
       publishers.find(p => p._2 == terminated.getActor).foreach(p2 => {
