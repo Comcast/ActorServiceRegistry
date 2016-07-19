@@ -4,8 +4,8 @@
        fields are mandatory. */
 
     "package": {
-        "name": "ActorServiceRegistry", // Bintray package name
-        "repo": "maven", // Bintray repository name
-        "subject": "bobra200", // Bintray subject (user or organization)
+        "name": "ActorServiceRegistry",
+        "repo": "maven", 
+        "subject": "bobra200"
         }
   }
