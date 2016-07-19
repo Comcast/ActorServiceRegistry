@@ -1,0 +1,11 @@
+{
+    /* Bintray package information.
+       In case the package already exists on Bintray, only the name, repo and subject
+       fields are mandatory. */
+
+    "package": {
+        "name": "ActorServiceRegistry", // Bintray package name
+        "repo": "maven", // Bintray repository name
+        "subject": "bobra200", // Bintray subject (user or organization)
+        }
+  }
