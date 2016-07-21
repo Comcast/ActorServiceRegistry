@@ -166,7 +166,7 @@ with ImplicitSender with BeforeAndAfterAll {
         // tell the sample service to go offline
         aSampleService ! PoisonPill
 
-      /*  Thread.sleep(5000)
+        Thread.sleep(5000)
 
         // request the sample service
         registry ! RequestService("sampleService")
@@ -174,7 +174,7 @@ with ImplicitSender with BeforeAndAfterAll {
         fishForMessage(20 seconds, "hint"){
           case RespondServiceUnAvailable("sampleService") => true
           case _ => false
-        } */
+        }
 
         registry ! PoisonPill
       }

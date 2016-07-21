@@ -148,10 +148,13 @@ class ServiceRegistry extends PersistentActor with ActorLogging {
 
     case terminated: Terminated =>
       log.info(s"Received -> Terminated: $terminated")
+      var toRemoveServiceName: Option[String] = None
       publishers.find(p => p._2 == terminated.getActor).foreach(p2 => {
+        toRemoveServiceName = Some(p2._1)
         subscribers.filter(p3 => p3._2.contains(p2._1))
           .foreach(p4 => p4._1 ! ServiceUnAvailable(p2._1))
       })
+      toRemoveServiceName.foreach(serviceName => publishers.remove(serviceName))
 
     case sss: SaveSnapshotSuccess =>
       log.info(s"Received -> SaveSnapshotSuccess: $sss")
