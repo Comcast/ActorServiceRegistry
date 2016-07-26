@@ -27,6 +27,11 @@ scalaVersion := "2.11.6"
 
 test in publish := {}
 
+licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
+
+publishMavenStyle := false
+    
+bintrayOrganization in bintray := None
 
 lazy val common = Project(id = "common",
                             base = file("common"))
