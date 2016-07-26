@@ -16,8 +16,6 @@
 import sbt._
 import Keys._
 
-import bintray.AttrMap
-import bintray._
 
 organization := "com.comcast"
 
