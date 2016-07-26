@@ -24,6 +24,8 @@ version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.6"
 
+test in deploy := {}
+
 lazy val common = Project(id = "common",
                             base = file("common"))
 
