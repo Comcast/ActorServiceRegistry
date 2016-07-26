@@ -7,7 +7,7 @@ scala:
   - 2.11.7
 
 script:
-  - sbt clean  deploy
+  - sbt clean publish
 deploy:
   provider: bintray
   user: "bobra200"
