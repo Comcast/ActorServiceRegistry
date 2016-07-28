@@ -15,16 +15,15 @@
 //
 import sbt._
 import Keys._
-import sbt.internals.ProjectSettings
 
-//import bintray.AttrMap
-//import bintray._
+import bintray.AttrMap
+import bintray._
 
 organization := "com.comcast"
 
 name := "actor-service-registry-aggregate"
 
-version := "1.0.1"
+version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.6"
 
