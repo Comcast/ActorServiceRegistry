@@ -16,8 +16,6 @@
 import sbt._
 import Keys._
 
-import bintray.AttrMap
-import bintray._
 
 organization := "com.comcast"
 
@@ -37,11 +35,19 @@ val DEFAULT_VERSION = s"$MAJOR_MIN_VERSION-SNAPSHOT"
 /*
 Yes, version is tightly coupled with travis , for now
  */
+val Version = sys.props.get("TRAVIS_BUILD_NUMBER") match {
+  case Some(travisVersion) => s"$MAJOR_MIN_VERSION.$travisVersion"
+  case None =>
+    sys.props.get("VERSION") match {
+      case Some(ver) =>
+        ver
+      case None =>
+        DEFAULT_VERSION
+    }
+}
 
-val Version = sys.props.getOrElse("VERSION",s"${MAJOR_MIN_VERSION}.${sys.props.getOrElse("TRAVIS_BUILD_NUMBER",DEFAULT_VERSION)}")
 
 /*
-
 Most Travis stuff taken from:
 http://szimano.org/automatic-deployments-to-jfrog-oss-and-bintrayjcentermaven-central-via-travis-ci-from-sbt/
  */
