@@ -4,6 +4,7 @@ scala:
 - 2.11.7
 script:
 - /bin/sh ./.travis.credentials.sh
+- cat $HOME/.bintray/.credentials
 - sbt -DTRAVIS_BUILD_NUMBER=$TRAVIS_BUILD_NUMBER clean publish
 env:
   global:
