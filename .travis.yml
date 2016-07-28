@@ -1,21 +1,10 @@
-
 language: scala
-
 jdk: oraclejdk8
-
 scala:
-  - 2.11.7
-
+- 2.11.7
 script:
-  - sbt clean publish
-deploy:
-  provider: bintray
-  user: "bobra200"
-  key:  "tXNTf/wsDHFaX/QyuDpVOkEKMYWE19R3OMrVGqSD+HIvJudmu7t14BZhRIjBNK8ovEVG8KDX0d0Y8q0f8k4mmyCJFqAYbncjyR0CLvomIuxw1dbegfyTb5VrgimFSFROTTit92BvZzuZ8sRxAx30xS3YQx4K1XYUgYswrGT6VLL4YDYDtvWuFIDyOKR53EmvCSb+pr546rP0zTmk3pc8+/WQN53NhJuT+/1VDx6cKyNQmkz612SYbGDekNwIylWhibNNVBQL59NQUlVVu6GxfmO/Kb4cU+KQps863JRwcsIy1ibFXu4PDUHmNuzkc6wZSj7CRzPr2VH1gFlIddfszbHVS4nycgtQUSKva/cQzFNG75tDupi/L/lyRCcpUWskNgasyZtfLuuZXbJiLRQvehXuRT4Yek1IsjohErBrQmicB61P+PbbU1dGZfB7/lCuxB9/Z/rldyYDeMZsrNJ3FaeM43iKyiPm346benKT8XQTXMo4E4IPXRb3fWYQaLGODGOYCiNIVMlVcC2qSfepRBYfk9iA6Z9X9WnxcViCnRWvF/wQTs+Aa+Iprr340ZMum7Vj3S8020DPnnUsiDT9rACPb8tNal3RsiGtm57sKxFqG9SaE/SUkeSp0ONcpUjTOrOpDODTIZpSKETH4zVE6DFsIIDNriOWGZmDHZXinPA="
-  after_success:
-  - >
-      test "${TRAVIS_PULL_REQUEST}" = 'false' &&
-      test "${TRAVIS_JDK_VERSION}" = 'oraclejdk7' &&
-      sh "$TRAVIS_BUILD_DIR/.travis.credentials.sh" &&
-      sbt 'set version := version.value + "." + System.getenv("TRAVIS_BUILD_NUMBER")' publish
-  
+- sbt clean publish
+env:
+  global:
+  - secure: uER7K+Dg0mp+FIjxIjO6+E22VUuUMW/mTiOqH9bQI1dTTJkq+H+m9uatRsKlb1T/75DAOOCBEWyIS4AmLQtAEyktR3vj1Bes9kN/BskqayZD6B+fk5CDUI0yif9TnmrfgS+2IbEaexJt5R7+58QhO50xS6wBbs0dsMh5ttKjTLQihnTmtZjphBsPTGgkeV+YpdY7o1uDmPtni/9fLnZpJ+64738V/5JaGdg8DCThdx4IHly7SmYV2+n3cZOM3PwF0b+DfY7F30Lcbypq4qHpAx4PBSqloX5xjdthfV+vxvgKcQXB9ZEWwLblW0jGhAhtWP3iuSXPyVX1vszLs8Va3IcCwtVSIaC0Wu1SPyg93JJwwN9BqBhg+1wv/yo7YPb7CR1T9HyYOmAmV3wK6lDLAKQUyEABAeQlzfQfzdVYgP6YSHWdMZGTsQmQNzDSW9L6LbGayi4ZP19OLc38GvtoxaQMbWwAon2l9eYB3mmKtlxHp0IYf7q0ceS8B4PHnxclXj9pd0jbtC4MudKqzMKkmS0WAtcegLdX2baBQf21IDh2srNH1862aWgg5TKX/daTQPj6UlWRwifk196Q6AvAVN70YuBYH3B2Xgz1xnLo0JgiCavyrVJJgzcj3Fq6WFbVIse6aLqVB3SWzh1fWzG1U3gdBDdxs7DHUUiUQKy7q0M=
+  - secure: ZKskUKddD2phcZmwb31C7WMvko+txQmbM2l/XNloyGkhB9bqhiYoOkArHYVMIcWlOM2j4kMcuXypn546/OkY8wHw+nQlDlISyhTBUV1FEwWWlO0NVN+Mez2B05m/sFuB1YCubDYhpZBCW60dvArgfguB3K/xd47zkvE0QYvvQ68Fk7KHO9439jBCIm3aywmmfVMcVmOWHjFPQFLu/30JbNJd5R7iY3iHRSYQBlmzx5Tx+c3AAYOsc+Ml6+RZDdWLlu4XLMuPvLY7nvORpv0mruDRb2NqfofroPfB0fQN8D2a0QBwVsdbNk7cAcoR4bRh9kgDtKPDLyLgN+LE/3E7tQlvVq1AIbTYYc+D6RHquZBeq2LhnzQx3SptjndGbKXrZW9BMDVAY6xK1sGw8i11cnfySl5fmEDcIFi9TmuHgLyBtkwoWUO/T0bf3js0bl6lf793puywfLmVxHH5+B4TaPZ7vfytNueoolkV0UE3/xhy1a+0gcbInPhg4RPgQpG5pd0j67Z+aQvdyDMgL+7EFz67filV0Mo1c4H91pxZEvdlXPWVJyYf0qRwvB2yF9UbPPsmk+kKWAnQh2ES6a6RE4KqyYoCTVfrkZsH96CP8z9Wvl3RMCevixbHkO9FnjmobE4XKvN6S3SUrxvIZQfoaEspp8zAbqewfAjkow3/yj8=
