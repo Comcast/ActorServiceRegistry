@@ -3,6 +3,7 @@ jdk: oraclejdk8
 scala:
 - 2.11.7
 script:
+- /bin/sh ./.travis.credentials.sh
 - sbt -DTRAVIS_BUILD_NUMBER=$TRAVIS_BUILD_NUMBER clean publish
 env:
   global:
