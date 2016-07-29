@@ -20,7 +20,7 @@ organization := "com.comcast"
 
 name := "actor-service-registry"
 
-version := "1.0-SNAPSHOT"
+//version := "1.0.0"
 
 scalaVersion := "2.11.7"
 
@@ -78,6 +78,8 @@ libraryDependencies += "nl.grons" %% "metrics-scala" % "3.3.0_a2.3" excludeAll (
 
 libraryDependencies +=  "joda-time" % "joda-time" % "2.7"
 
+
+licenses := ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil // this is required! otherwise Bintray will reject the code
 
 artifact in (Compile, assembly) := {
   val art = (artifact in (Compile, assembly)).value
