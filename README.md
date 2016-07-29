@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 ```
+[![Build Status](https://travis-ci.org/Comcast/ActorServiceRegistry.svg?branch=master)](https://travis-ci.org/Comcast/ActorServiceRegistry)
 
 ## Service Registry for Akka ##
 
