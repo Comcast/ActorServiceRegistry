@@ -32,10 +32,6 @@ val slf4jVersion = "1.7.10"
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-test in assembly :={}
-
-test in publish := {}
-
 libraryDependencies += "junit" % "junit" % "4.5" % "test"
 
 libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.1.5" % "test"
