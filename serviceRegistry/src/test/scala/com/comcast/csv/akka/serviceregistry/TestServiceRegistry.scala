@@ -153,10 +153,12 @@ with ImplicitSender with BeforeAndAfterAll {
         val aSampleService = system.actorOf(SampleService.props)
         aSampleService ! SampleServiceInitialize(serviceName = "sampleService", registry = registry)
 
+        Thread.sleep(5000)
+
         // request the sample service
         registry ! RequestService("sampleService")
 
-        fishForMessage(5 seconds, "hint"){
+        fishForMessage(20 seconds, "hint"){
           case RespondService("sampleService", a) if a == aSampleService => true
           case _ => false
         }
@@ -164,14 +166,15 @@ with ImplicitSender with BeforeAndAfterAll {
         // tell the sample service to go offline
         aSampleService ! PoisonPill
 
+        Thread.sleep(5000)
+
         // request the sample service
         registry ! RequestService("sampleService")
 
-        fishForMessage(5 seconds, "hint"){
-          case RespondService("sampleService", a) if a == aSampleService => true
+        fishForMessage(20 seconds, "hint"){
+          case RespondServiceUnAvailable("sampleService") => true
           case _ => false
         }
-
 
         registry ! PoisonPill
       }
