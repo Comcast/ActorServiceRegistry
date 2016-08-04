@@ -56,7 +56,7 @@ val rootPublishSettings =
     doNotPublishSettings
   else
     Seq(
-      organization := "com.comcast.csv",
+      organization := "com.comcast",
       version := Version,
       pomExtra := <scm>
         <url>git@github.com:Comcast/ActorServiceRegistry.git</url>
@@ -71,8 +71,8 @@ val rootPublishSettings =
         </developers>,
       publishArtifact in Test := false,
       homepage := Some(url("https://github.com/Comcast/ActorServiceRegistry")),
-      publishMavenStyle := false,
-      resolvers += Resolver.url("supler ivy resolver", url("http://dl.bintray.com/bobra200/maven"))(Resolver.ivyStylePatterns),
+      publishMavenStyle := true,
+      resolvers += Resolver.url("bobrar ivy resolver", url("http://dl.bintray.com/bobra200/ASR"))(Resolver.ivyStylePatterns),
       licenses := ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil // this is required! otherwise Bintray will reject the code
     )
     )
